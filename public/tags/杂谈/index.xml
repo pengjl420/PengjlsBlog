@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>杂谈 on Pengjls Blog</title>
+    <link>https://pengjl.com/tags/%E6%9D%82%E8%B0%88/</link>
+    <description>Recent content in 杂谈 on Pengjls Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Sat, 09 Oct 2021 17:41:35 +0800</lastBuildDate><atom:link href="https://pengjl.com/tags/%E6%9D%82%E8%B0%88/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>第一篇博客</title>
+      <link>https://pengjl.com/post/2021-10-09-first/</link>
+      <pubDate>Sat, 09 Oct 2021 17:41:35 +0800</pubDate>
+      
+      <guid>https://pengjl.com/post/2021-10-09-first/</guid>
+      <description>为什么开始写博客 其实很早就想写的，个人域名已经注册好多年了，一直都没有鼓起勇气写文字，这段时间在反思回顾这几年的经历，总结下来的几点原因。 懒</description>
+    </item>
+    
+  </channel>
+</rss>
