@@ -1,26 +1,14 @@
 
- **_Huabing Zhao_** is an ICT veteran with a passion for open source. He has a solid experience in the telecommunication and information technology industry for more than 17 years.
+ **_pengjl_**  96年生，17年5月开始工作，4年多的大头兵。
 
-Throughout his career, he has built a number of large-scale, cross-country OSS/BSS platforms/systems and operation tools, most of them are still running in productions.
+啥都会点，但啥都不精通的前全干工程师。目前的后端工程师，未来的项目经理。
 
-He loves open source and has been contributing to a variety of open source projects, including Istio(Service Mesh https://istio.io), ONAP(Open Network Automation Platform https://wiki.onap.org), Hugo(static site generators https://themes.gohugo.io/hugo-theme-cleanwhite/), etc.
 
-He also has strong interests in various tech stuff such as Artificial Intelligence, Cryptocurrencies, Smart Home.
+目前主要技术栈：Php（Laravel），GoLang（Beego、Go-Zero），Vue、微信小程序
 
-Huabing holds a BS in Computer Science and Technology from Chongqing University in China.
 
-Currently, Huabing is working on a 5G NFV&SDN orchestration and management platform, at the same time, he also wears the hat of PTL in ONAP(http://www.onap.org) open source project.
+其他类似于运维的活咱也不敢写，也在学习实践中，后续会通过博客分享一下，欢迎各路大佬批评指正，分享交流。
 
-He is happy with his current job, but also willing to take new challenges if the opportunity matches his career path.
+Flag：不面向 `Ctrl C+V` 写博客，深受国内各大博客平台内容雷同之苦。
 
-While he is not working, he enjoys watching movies, swimming, hiking, travelling, writing blogs and learning languages.
-
-Feel free to connect Huabing via Github (https://github.com/zhaohuabing) or drop him an email (zhaohuabing@gmail.com).
-
-## Talks
-
-* [Service Mesh in Action with ONAP] (https://www.slideshare.net/HuabingZhao/service-mesh-in-action-with-onap) GNTC, 南京, 2018
-* [MSB to Support Carrier Grade ONAP Microservice Architecture with Service Mesh] (https://www.slideshare.net/HuabingZhao/msb-to-support-carrier-grade-onap-microservice-architecture-with-service-mesh) ONS, Los Angeles, 2018
-* [Microservice Powered Orchestration](https://www.slideshare.net/HuabingZhao/microservice-powered-orchestration-126100339) ONS, Santa Clara, 2017
-* [MSB Technical Deep Dive and ONAP Use Cases] (https://www.slideshare.net/HuabingZhao/msb-depp-dive/) ONAP Developer Event, New Jersey, 2017
-* [Microservice Bus Tutorial] (https://www.slideshare.net/HuabingZhao/microservice-bus-tutorial) ONAP Developer Event, Paris, 2017
+ 
