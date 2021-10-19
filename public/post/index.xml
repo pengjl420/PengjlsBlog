@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Pengjls Blog</title>
+    <link>https://pengjl.com/post/</link>
+    <description>Recent content in Posts on Pengjls Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 19 Oct 2021 22:35:32 +0800</lastBuildDate><atom:link href="https://pengjl.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Golang代码安全指南</title>
+      <link>https://pengjl.com/post/golang-2021-10-19/</link>
+      <pubDate>Tue, 19 Oct 2021 22:35:32 +0800</pubDate>
+      
+      <guid>https://pengjl.com/post/golang-2021-10-19/</guid>
+      <description>通用类 1. 代码实现类 1.1 内存管理 1.1.1【必须】切片长度校验 在对slice进行操作时，必须判断长度是否合法，防止程序panic // bad: 未判断dat</description>
+    </item>
+    
+    <item>
+      <title>第一篇博客</title>
+      <link>https://pengjl.com/post/2021-10-09-first/</link>
+      <pubDate>Sat, 09 Oct 2021 17:41:35 +0800</pubDate>
+      
+      <guid>https://pengjl.com/post/2021-10-09-first/</guid>
+      <description>为什么开始写博客 其实很早就想写的，个人域名已经注册好多年了，一直都没有鼓起勇气写文字，这段时间在反思回顾这几年的经历，总结下来的几点原因。 懒</description>
+    </item>
+    
+  </channel>
+</rss>

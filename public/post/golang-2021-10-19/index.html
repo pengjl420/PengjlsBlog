@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Pengjls Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://pengjl.com/img/home-bg-jeep.jpg">
+    <meta property="twitter:image" content="https://pengjl.com/img/home-bg-jeep.jpg" />
+    
+
+    
+    <meta name="title" content="Golang代码安全指南" />
+    <meta property="og:title" content="Golang代码安全指南" />
+    <meta property="twitter:title" content="Golang代码安全指南" />
+    
+
+    
+    <meta name="description" content="">
+    <meta property="og:description" content="" />
+    <meta property="twitter:description" content="" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Golang代码安全指南-彭建龙的博客 | Pengjls Blog</title>
+
+    <link rel="canonical" href="/post/golang-2021-10-19/">
+
+    <link rel="stylesheet" href="/css/iDisqus.min.css"/>
+
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Pengjls Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+                    
+                        
+                        <li>
+                            <a href="/categories/tech">tech</a>
+                        </li>
+                        
+                    
+                    
+		    
+                        <li><a href="/top/archive/">ARCHIVE</a></li>
+                    
+                        <li><a href="/top/about/">ABOUT</a></li>
+                    
+
+                    
+		    <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		    </li>
+                    
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/home-bg-jeep.jpg')
+    }
+</style>
+
+<header class="intro-header" >
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                    </div>
+                    <h1>Golang代码安全指南</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        
+                            Posted by 
+                            
+                                     &#34;pengjl&#34;
+                             
+                            on 
+                            Tuesday, October 19, 2021
+                            
+                            
+                            
+                            
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h1 id="通用类">通用类</h1>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="1-代码实现类">1. 代码实现类</h2>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="11-内存管理">1.1 内存管理</h3>
+<h4 id="111必须切片长度校验">1.1.1【必须】切片长度校验</h4>
+<ul>
+<li>在对slice进行操作时，必须判断长度是否合法，防止程序panic</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad: 未判断data的长度，可导致 index out of range
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">decode</span>(data []<span style="color:#8be9fd">byte</span>) <span style="color:#8be9fd">bool</span> {
+	<span style="color:#ff79c6">if</span> data[<span style="color:#bd93f9">0</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;F&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">1</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;U&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">2</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;Z&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">3</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;Z&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">4</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;E&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">5</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;R&#39;</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Bad&#34;</span>)
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">true</span>
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+}
+
+<span style="color:#6272a4">// bad: slice bounds out of range
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">foo</span>() {
+	<span style="color:#8be9fd;font-style:italic">var</span> slice = []<span style="color:#8be9fd">int</span>{<span style="color:#bd93f9">0</span>, <span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">2</span>, <span style="color:#bd93f9">3</span>, <span style="color:#bd93f9">4</span>, <span style="color:#bd93f9">5</span>, <span style="color:#bd93f9">6</span>}
+	fmt.<span style="color:#50fa7b">Println</span>(slice[:<span style="color:#bd93f9">10</span>])
+}
+
+<span style="color:#6272a4">// good: 使用data前应判断长度是否合法
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">decode</span>(data []<span style="color:#8be9fd">byte</span>) <span style="color:#8be9fd">bool</span> {
+	<span style="color:#ff79c6">if</span> <span style="color:#8be9fd;font-style:italic">len</span>(data) <span style="color:#ff79c6">==</span> <span style="color:#bd93f9">6</span> {
+		<span style="color:#ff79c6">if</span> data[<span style="color:#bd93f9">0</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;F&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">1</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;U&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">2</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;Z&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">3</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;Z&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">4</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;E&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> data[<span style="color:#bd93f9">5</span>] <span style="color:#ff79c6">==</span> <span style="color:#f1fa8c">&#39;R&#39;</span> {
+			fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Good&#34;</span>)
+			<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">true</span>
+		}
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+}
+</code></pre></div><h4 id="112必须nil指针判断">1.1.2【必须】nil指针判断</h4>
+<ul>
+<li>进行指针操作时，必须判断该指针是否为nil，防止程序panic，尤其在进行结构体Unmarshal时</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#8be9fd;font-style:italic">type</span> Packet <span style="color:#8be9fd;font-style:italic">struct</span> {
+	PackeyType    <span style="color:#8be9fd">uint8</span>
+	PackeyVersion <span style="color:#8be9fd">uint8</span>
+	Data          <span style="color:#ff79c6">*</span>Data
+}
+
+<span style="color:#8be9fd;font-style:italic">type</span> Data <span style="color:#8be9fd;font-style:italic">struct</span> {
+	Stat <span style="color:#8be9fd">uint8</span>
+	Len  <span style="color:#8be9fd">uint8</span>
+	Buf  [<span style="color:#bd93f9">8</span>]<span style="color:#8be9fd">byte</span>
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> (p <span style="color:#ff79c6">*</span>Packet) <span style="color:#50fa7b">UnmarshalBinary</span>(b []<span style="color:#8be9fd">byte</span>) <span style="color:#8be9fd">error</span> {
+	<span style="color:#ff79c6">if</span> <span style="color:#8be9fd;font-style:italic">len</span>(b) &lt; <span style="color:#bd93f9">2</span> {
+		<span style="color:#ff79c6">return</span> io.EOF
+	}
+
+	p.PackeyType = b[<span style="color:#bd93f9">0</span>]
+	p.PackeyVersion = b[<span style="color:#bd93f9">1</span>]
+
+	<span style="color:#6272a4">// 若长度等于2，那么不会new Data
+</span><span style="color:#6272a4"></span>	<span style="color:#ff79c6">if</span> <span style="color:#8be9fd;font-style:italic">len</span>(b) &gt; <span style="color:#bd93f9">2</span> {
+		p.Data = <span style="color:#8be9fd;font-style:italic">new</span>(Data)
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">nil</span>
+}
+
+<span style="color:#6272a4">// bad: 未判断指针是否为nil
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	packet <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">new</span>(Packet)
+	data <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>([]<span style="color:#8be9fd">byte</span>, <span style="color:#bd93f9">2</span>)
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">:=</span> packet.<span style="color:#50fa7b">UnmarshalBinary</span>(data); err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Failed to unmarshal packet&#34;</span>)
+		<span style="color:#ff79c6">return</span>
+	}
+
+	fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;Stat: %v\n&#34;</span>, packet.Data.Stat)
+}
+
+<span style="color:#6272a4">// good: 判断Data指针是否为nil
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	packet <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">new</span>(Packet)
+	data <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>([]<span style="color:#8be9fd">byte</span>, <span style="color:#bd93f9">2</span>)
+
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">:=</span> packet.<span style="color:#50fa7b">UnmarshalBinary</span>(data); err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Failed to unmarshal packet&#34;</span>)
+		<span style="color:#ff79c6">return</span>
+	}
+
+	<span style="color:#ff79c6">if</span> packet.Data <span style="color:#ff79c6">==</span> <span style="color:#ff79c6">nil</span> {
+		<span style="color:#ff79c6">return</span>
+	}
+
+	fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;Stat: %v\n&#34;</span>, packet.Data.Stat)
+}
+</code></pre></div><h4 id="113必须整数安全">1.1.3【必须】整数安全</h4>
+<ul>
+<li>
+<p>在进行数字运算操作时，需要做好长度限制，防止外部输入运算导致异常：</p>
+<ul>
+<li>确保无符号整数运算时不会反转</li>
+<li>确保有符号整数运算时不会出现溢出</li>
+<li>确保整型转换时不会出现截断错误</li>
+<li>确保整型转换时不会出现符号错误</li>
+</ul>
+</li>
+<li>
+<p>以下场景必须严格进行长度限制：</p>
+<ul>
+<li>作为数组索引</li>
+<li>作为对象的长度或者大小</li>
+<li>作为数组的边界（如作为循环计数器）</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad: 未限制长度，导致整数溢出
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">overflow</span>(numControlByUser <span style="color:#8be9fd">int32</span>) {
+	<span style="color:#8be9fd;font-style:italic">var</span> numInt <span style="color:#8be9fd">int32</span> = <span style="color:#bd93f9">0</span>
+	numInt = numControlByUser <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1</span>
+	<span style="color:#6272a4">// 对长度限制不当，导致整数溢出
+</span><span style="color:#6272a4"></span>	fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;%d\n&#34;</span>, numInt)
+	<span style="color:#6272a4">// 使用numInt，可能导致其他错误
+</span><span style="color:#6272a4"></span>}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	<span style="color:#50fa7b">overflow</span>(<span style="color:#bd93f9">2147483647</span>)
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">overflow</span>(numControlByUser <span style="color:#8be9fd">int32</span>) {
+	<span style="color:#8be9fd;font-style:italic">var</span> numInt <span style="color:#8be9fd">int32</span> = <span style="color:#bd93f9">0</span>
+	numInt = numControlByUser <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1</span>
+	<span style="color:#ff79c6">if</span> numInt &lt; <span style="color:#bd93f9">0</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;integer overflow&#34;</span>)
+		<span style="color:#ff79c6">return</span>
+	}
+	fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;integer ok&#34;</span>)
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	<span style="color:#50fa7b">overflow</span>(<span style="color:#bd93f9">2147483647</span>)
+}
+</code></pre></div><h4 id="114必须make分配长度验证">1.1.4【必须】make分配长度验证</h4>
+<ul>
+<li>在进行make分配内存时，需要对外部可控的长度进行校验，防止程序panic。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">parse</span>(lenControlByUser <span style="color:#8be9fd">int</span>, data []<span style="color:#8be9fd">byte</span>) {
+	size <span style="color:#ff79c6">:=</span> lenControlByUser
+	<span style="color:#6272a4">// 对外部传入的size，进行长度判断以免导致panic
+</span><span style="color:#6272a4"></span>	buffer <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>([]<span style="color:#8be9fd">byte</span>, size)
+	<span style="color:#8be9fd;font-style:italic">copy</span>(buffer, data)
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">parse</span>(lenControlByUser <span style="color:#8be9fd">int</span>, data []<span style="color:#8be9fd">byte</span>) ([]<span style="color:#8be9fd">byte</span>, <span style="color:#8be9fd">error</span>) {
+	size <span style="color:#ff79c6">:=</span> lenControlByUser
+	<span style="color:#6272a4">// 限制外部可控的长度大小范围
+</span><span style="color:#6272a4"></span>	<span style="color:#ff79c6">if</span> size &gt; <span style="color:#bd93f9">64</span><span style="color:#ff79c6">*</span><span style="color:#bd93f9">1024</span><span style="color:#ff79c6">*</span><span style="color:#bd93f9">1024</span> {
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">nil</span>, errors.<span style="color:#50fa7b">New</span>(<span style="color:#f1fa8c">&#34;value too large&#34;</span>)
+	}
+	buffer <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>([]<span style="color:#8be9fd">byte</span>, size)
+	<span style="color:#8be9fd;font-style:italic">copy</span>(buffer, data)
+	<span style="color:#ff79c6">return</span> buffer, <span style="color:#ff79c6">nil</span>
+}
+</code></pre></div><h4 id="115必须禁止setfinalizer和指针循环引用同时使用">1.1.5【必须】禁止SetFinalizer和指针循环引用同时使用</h4>
+<ul>
+<li>当一个对象从被GC选中到移除内存之前，runtime.SetFinalizer()都不会执行，即使程序正常结束或者发生错误。由指针构成的“循环引用”虽然能被GC正确处理，但由于无法确定Finalizer依赖顺序，从而无法调用runtime.SetFinalizer()，导致目标对象无法变成可达状态，从而造成内存无法被回收。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">foo</span>() {
+	<span style="color:#8be9fd;font-style:italic">var</span> a, b Data
+	a.o = <span style="color:#ff79c6">&amp;</span>b
+	b.o = <span style="color:#ff79c6">&amp;</span>a
+
+	<span style="color:#6272a4">// 指针循环引用，SetFinalizer()无法正常调用
+</span><span style="color:#6272a4"></span>	runtime.<span style="color:#50fa7b">SetFinalizer</span>(<span style="color:#ff79c6">&amp;</span>a, <span style="color:#8be9fd;font-style:italic">func</span>(d <span style="color:#ff79c6">*</span>Data) {
+		fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;a %p final.\n&#34;</span>, d)
+	})
+	runtime.<span style="color:#50fa7b">SetFinalizer</span>(<span style="color:#ff79c6">&amp;</span>b, <span style="color:#8be9fd;font-style:italic">func</span>(d <span style="color:#ff79c6">*</span>Data) {
+		fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;b %p final.\n&#34;</span>, d)
+	})
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	<span style="color:#ff79c6">for</span> {
+		<span style="color:#50fa7b">foo</span>()
+		time.<span style="color:#50fa7b">Sleep</span>(time.Millisecond)
+	}
+}
+
+</code></pre></div><h4 id="116必须禁止重复释放channel">1.1.6【必须】禁止重复释放channel</h4>
+<ul>
+<li>重复释放一般存在于异常流程判断中，如果恶意攻击者构造出异常条件使程序重复释放channel，则会触发运行时panic，从而造成DoS攻击。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">foo</span>(c <span style="color:#8be9fd;font-style:italic">chan</span> <span style="color:#8be9fd">int</span>) {
+	<span style="color:#ff79c6">defer</span> <span style="color:#8be9fd;font-style:italic">close</span>(c)
+	err <span style="color:#ff79c6">:=</span> <span style="color:#50fa7b">processBusiness</span>()
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		c <span style="color:#ff79c6">&lt;-</span> <span style="color:#bd93f9">0</span>
+		<span style="color:#8be9fd;font-style:italic">close</span>(c) <span style="color:#6272a4">// 重复释放channel
+</span><span style="color:#6272a4"></span>		<span style="color:#ff79c6">return</span>
+	}
+	c <span style="color:#ff79c6">&lt;-</span> <span style="color:#bd93f9">1</span>
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">foo</span>(c <span style="color:#8be9fd;font-style:italic">chan</span> <span style="color:#8be9fd">int</span>) {
+	<span style="color:#ff79c6">defer</span> <span style="color:#8be9fd;font-style:italic">close</span>(c) <span style="color:#6272a4">// 使用defer延迟关闭channel
+</span><span style="color:#6272a4"></span>	err <span style="color:#ff79c6">:=</span> <span style="color:#50fa7b">processBusiness</span>()
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		c <span style="color:#ff79c6">&lt;-</span> <span style="color:#bd93f9">0</span>
+		<span style="color:#ff79c6">return</span>
+	}
+	c <span style="color:#ff79c6">&lt;-</span> <span style="color:#bd93f9">1</span>
+}
+</code></pre></div><h4 id="117必须确保每个协程都能退出">1.1.7【必须】确保每个协程都能退出</h4>
+<ul>
+<li>启动一个协程就会做一个入栈操作，在系统不退出的情况下，协程也没有设置退出条件，则相当于协程失去了控制，它占用的资源无法回收，可能会导致内存泄露。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad: 协程没有设置退出条件
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">doWaiter</span>(name <span style="color:#8be9fd">string</span>, second <span style="color:#8be9fd">int</span>) {
+	<span style="color:#ff79c6">for</span> {
+		time.<span style="color:#50fa7b">Sleep</span>(time.<span style="color:#50fa7b">Duration</span>(second) <span style="color:#ff79c6">*</span> time.Second)
+		fmt.<span style="color:#50fa7b">Println</span>(name, <span style="color:#f1fa8c">&#34; is ready!&#34;</span>)
+	}
+}
+</code></pre></div><h4 id="118推荐不使用unsafe包">1.1.8【推荐】不使用unsafe包</h4>
+<ul>
+<li>由于unsafe包绕过了 Golang 的内存安全原则，一般来说使用该库是不安全的，可导致内存破坏，尽量避免使用该包。若必须要使用unsafe操作指针，必须做好安全校验。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad: 通过unsafe操作原始指针
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">unsafePointer</span>() {
+	b <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>([]<span style="color:#8be9fd">byte</span>, <span style="color:#bd93f9">1</span>)
+	foo <span style="color:#ff79c6">:=</span> (<span style="color:#ff79c6">*</span><span style="color:#8be9fd">int</span>)(unsafe.<span style="color:#50fa7b">Pointer</span>(<span style="color:#8be9fd;font-style:italic">uintptr</span>(unsafe.<span style="color:#50fa7b">Pointer</span>(<span style="color:#ff79c6">&amp;</span>b[<span style="color:#bd93f9">0</span>])) <span style="color:#ff79c6">+</span> <span style="color:#8be9fd;font-style:italic">uintptr</span>(<span style="color:#bd93f9">0xfffffffe</span>)))
+	fmt.<span style="color:#50fa7b">Print</span>(<span style="color:#ff79c6">*</span>foo <span style="color:#ff79c6">+</span> <span style="color:#bd93f9">1</span>)
+}
+
+<span style="color:#6272a4">// [signal SIGSEGV: segmentation violation code=0x1 addr=0xc100068f55 pc=0x49142b]
+</span><span style="color:#6272a4"></span>
+</code></pre></div><h4 id="119推荐不使用slice作为函数入参">1.1.9【推荐】不使用slice作为函数入参</h4>
+<ul>
+<li>slice在作为函数入参时，函数内对slice的修改可能会影响原始数据</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">  <span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span>  <span style="color:#6272a4">// slice作为函数入参时包含原始数组指针
+</span><span style="color:#6272a4"></span>  <span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">modify</span>(array []<span style="color:#8be9fd">int</span>) {
+      array[<span style="color:#bd93f9">0</span>] = <span style="color:#bd93f9">10</span> <span style="color:#6272a4">// 对入参slice的元素修改会影响原始数据
+</span><span style="color:#6272a4"></span>  }
+  
+  <span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+      array <span style="color:#ff79c6">:=</span> []<span style="color:#8be9fd">int</span>{<span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">2</span>, <span style="color:#bd93f9">3</span>, <span style="color:#bd93f9">4</span>, <span style="color:#bd93f9">5</span>}
+  
+      <span style="color:#50fa7b">modify</span>(array)
+      fmt.<span style="color:#50fa7b">Println</span>(array) <span style="color:#6272a4">// output：[10 2 3 4 5]
+</span><span style="color:#6272a4"></span>  }
+
+  <span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span>  <span style="color:#6272a4">// 数组作为函数入参，而不是slice
+</span><span style="color:#6272a4"></span>  <span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">modify</span>(array [<span style="color:#bd93f9">5</span>]<span style="color:#8be9fd">int</span>) {
+    array[<span style="color:#bd93f9">0</span>] = <span style="color:#bd93f9">10</span>
+  }
+
+  <span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+      <span style="color:#6272a4">// 传入数组，注意数组与slice的区别
+</span><span style="color:#6272a4"></span>      array <span style="color:#ff79c6">:=</span> [<span style="color:#bd93f9">5</span>]<span style="color:#8be9fd">int</span>{<span style="color:#bd93f9">1</span>, <span style="color:#bd93f9">2</span>, <span style="color:#bd93f9">3</span>, <span style="color:#bd93f9">4</span>, <span style="color:#bd93f9">5</span>}
+  
+      <span style="color:#50fa7b">modify</span>(array)
+      fmt.<span style="color:#50fa7b">Println</span>(array)
+  }
+  
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="12-文件操作">1.2 文件操作</h3>
+<h4 id="121必须-路径穿越检查">1.2.1【必须】 路径穿越检查</h4>
+<ul>
+<li>在进行文件操作时，如果对外部传入的文件名未做限制，可能导致任意文件读取或者任意文件写入，严重可能导致代码执行。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad: 任意文件读取
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">handler</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+	path <span style="color:#ff79c6">:=</span> r.URL.<span style="color:#50fa7b">Query</span>()[<span style="color:#f1fa8c">&#34;path&#34;</span>][<span style="color:#bd93f9">0</span>]
+
+	<span style="color:#6272a4">// 未过滤文件路径，可能导致任意文件读取
+</span><span style="color:#6272a4"></span>	data, _ <span style="color:#ff79c6">:=</span> ioutil.<span style="color:#50fa7b">ReadFile</span>(path)
+	w.<span style="color:#50fa7b">Write</span>(data)
+
+	<span style="color:#6272a4">// 对外部传入的文件名变量，还需要验证是否存在../等路径穿越的文件名
+</span><span style="color:#6272a4"></span>	data, _ = ioutil.<span style="color:#50fa7b">ReadFile</span>(filepath.<span style="color:#50fa7b">Join</span>(<span style="color:#f1fa8c">&#34;/home/user/&#34;</span>, path))
+	w.<span style="color:#50fa7b">Write</span>(data)
+}
+
+<span style="color:#6272a4">// bad: 任意文件写入
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">unzip</span>(f <span style="color:#8be9fd">string</span>) {
+	r, _ <span style="color:#ff79c6">:=</span> zip.<span style="color:#50fa7b">OpenReader</span>(f)
+	<span style="color:#ff79c6">for</span> _, f <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">range</span> r.File {
+		p, _ <span style="color:#ff79c6">:=</span> filepath.<span style="color:#50fa7b">Abs</span>(f.Name)
+		<span style="color:#6272a4">// 未验证压缩文件名，可能导致../等路径穿越，任意文件路径写入
+</span><span style="color:#6272a4"></span>		ioutil.<span style="color:#50fa7b">WriteFile</span>(p, []<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;present&#34;</span>), <span style="color:#bd93f9">0640</span>)
+	}
+}
+
+<span style="color:#6272a4">// good: 检查压缩的文件名是否包含..路径穿越特征字符，防止任意写入
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">unzipGood</span>(f <span style="color:#8be9fd">string</span>) <span style="color:#8be9fd">bool</span> {
+	r, err <span style="color:#ff79c6">:=</span> zip.<span style="color:#50fa7b">OpenReader</span>(f)
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;read zip file fail&#34;</span>)
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+	}
+	<span style="color:#ff79c6">for</span> _, f <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">range</span> r.File {
+		<span style="color:#ff79c6">if</span> !strings.<span style="color:#50fa7b">Contains</span>(f.Name, <span style="color:#f1fa8c">&#34;..&#34;</span>) {
+			p, _ <span style="color:#ff79c6">:=</span> filepath.<span style="color:#50fa7b">Abs</span>(f.Name)
+			ioutil.<span style="color:#50fa7b">WriteFile</span>(p, []<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;present&#34;</span>), <span style="color:#bd93f9">0640</span>)
+		} <span style="color:#ff79c6">else</span> {
+			<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+		}
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">true</span>
+}
+</code></pre></div><h4 id="122必须-文件访问权限">1.2.2【必须】 文件访问权限</h4>
+<ul>
+<li>根据创建文件的敏感性设置不同级别的访问权限，以防止敏感数据被任意权限用户读取。例如，设置文件权限为：<code>-rw-r-----</code></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">ioutil.<span style="color:#50fa7b">WriteFile</span>(p, []<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;present&#34;</span>), <span style="color:#bd93f9">0640</span>)
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="13-系统接口">1.3 系统接口</h3>
+<p><strong>1.3.1【必须】命令执行检查</strong></p>
+<ul>
+<li>使用<code>exec.Command</code>、<code>exec.CommandContext</code>、<code>syscall.StartProcess</code>、<code>os.StartProcess</code>等函数时，第一个参数（path）直接取外部输入值时，应使用白名单限定可执行的命令范围，不允许传入<code>bash</code>、<code>cmd</code>、<code>sh</code>等命令；</li>
+<li>使用<code>exec.Command</code>、<code>exec.CommandContext</code>等函数时，通过<code>bash</code>、<code>cmd</code>、<code>sh</code>等创建shell，-c后的参数（arg）拼接外部输入，应过滤\n  $  &amp;  ;  |  '  &quot;  ( )  `等潜在恶意字符；</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">foo</span>() {
+	userInputedVal <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;&amp;&amp; echo &#39;hello&#39;&#34;</span> <span style="color:#6272a4">// 假设外部传入该变量值
+</span><span style="color:#6272a4"></span>	cmdName <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;ping &#34;</span> <span style="color:#ff79c6">+</span> userInputedVal
+
+	<span style="color:#6272a4">// 未判断外部输入是否存在命令注入字符，结合sh可造成命令注入
+</span><span style="color:#6272a4"></span>	cmd <span style="color:#ff79c6">:=</span> exec.<span style="color:#50fa7b">Command</span>(<span style="color:#f1fa8c">&#34;sh&#34;</span>, <span style="color:#f1fa8c">&#34;-c&#34;</span>, cmdName)
+	output, _ <span style="color:#ff79c6">:=</span> cmd.<span style="color:#50fa7b">CombinedOutput</span>()
+	fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#8be9fd;font-style:italic">string</span>(output))
+
+	cmdName <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;ls&#34;</span>
+	<span style="color:#6272a4">// 未判断外部输入是否是预期命令
+</span><span style="color:#6272a4"></span>	cmd <span style="color:#ff79c6">:=</span> exec.<span style="color:#50fa7b">Command</span>(cmdName)
+	output, _ <span style="color:#ff79c6">:=</span> cmd.<span style="color:#50fa7b">CombinedOutput</span>()
+	fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#8be9fd;font-style:italic">string</span>(output))
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">checkIllegal</span>(cmdName <span style="color:#8be9fd">string</span>) <span style="color:#8be9fd">bool</span> {
+	<span style="color:#ff79c6">if</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;&amp;&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;|&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;;&#34;</span>) <span style="color:#ff79c6">||</span>
+		strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;$&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;&#39;&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;`&#34;</span>) <span style="color:#ff79c6">||</span>
+		strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;(&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;)&#34;</span>) <span style="color:#ff79c6">||</span> strings.<span style="color:#50fa7b">Contains</span>(cmdName, <span style="color:#f1fa8c">&#34;\&#34;&#34;</span>) {
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">true</span>
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	userInputedVal <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;&amp;&amp; echo &#39;hello&#39;&#34;</span>
+	cmdName <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;ping &#34;</span> <span style="color:#ff79c6">+</span> userInputedVal
+
+	<span style="color:#ff79c6">if</span> <span style="color:#50fa7b">checkIllegal</span>(cmdName) { <span style="color:#6272a4">// 检查传给sh的命令是否有特殊字符
+</span><span style="color:#6272a4"></span>		<span style="color:#ff79c6">return</span> <span style="color:#6272a4">// 存在特殊字符直接return
+</span><span style="color:#6272a4"></span>	}
+
+	cmd <span style="color:#ff79c6">:=</span> exec.<span style="color:#50fa7b">Command</span>(<span style="color:#f1fa8c">&#34;sh&#34;</span>, <span style="color:#f1fa8c">&#34;-c&#34;</span>, cmdName)
+	output, _ <span style="color:#ff79c6">:=</span> cmd.<span style="color:#50fa7b">CombinedOutput</span>()
+	fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#8be9fd;font-style:italic">string</span>(output))
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="14-通信安全">1.4 通信安全</h3>
+<h4 id="141必须网络通信采用tls方式">1.4.1【必须】网络通信采用TLS方式</h4>
+<ul>
+<li>明文传输的通信协议目前已被验证存在较大安全风险，被中间人劫持后可能导致许多安全风险，因此必须采用至少TLS的安全通信方式保证通信安全，例如gRPC/Websocket都使用TLS1.3。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	http.<span style="color:#50fa7b">HandleFunc</span>(<span style="color:#f1fa8c">&#34;/&#34;</span>, <span style="color:#8be9fd;font-style:italic">func</span>(w http.ResponseWriter, req <span style="color:#ff79c6">*</span>http.Request) {
+		w.<span style="color:#50fa7b">Header</span>().<span style="color:#50fa7b">Add</span>(<span style="color:#f1fa8c">&#34;Strict-Transport-Security&#34;</span>, <span style="color:#f1fa8c">&#34;max-age=63072000; includeSubDomains&#34;</span>)
+		w.<span style="color:#50fa7b">Write</span>([]<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;This is an example server.\n&#34;</span>))
+	})
+
+	<span style="color:#6272a4">// 服务器配置证书与私钥
+</span><span style="color:#6272a4"></span>	log.<span style="color:#50fa7b">Fatal</span>(http.<span style="color:#50fa7b">ListenAndServeTLS</span>(<span style="color:#f1fa8c">&#34;:443&#34;</span>, <span style="color:#f1fa8c">&#34;yourCert.pem&#34;</span>, <span style="color:#f1fa8c">&#34;yourKey.pem&#34;</span>, <span style="color:#ff79c6">nil</span>))
+}
+</code></pre></div><h4 id="142推荐tls启用证书验证">1.4.2【推荐】TLS启用证书验证</h4>
+<ul>
+<li>TLS证书应当是有效的、未过期的，且配置正确的域名，生产环境的服务端应启用证书验证。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;crypto/tls&#34;</span>
+	<span style="color:#f1fa8c">&#34;net/http&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">doAuthReq</span>(authReq <span style="color:#ff79c6">*</span>http.Request) <span style="color:#ff79c6">*</span>http.Response {
+	tr <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>http.Transport{
+		TLSClientConfig: <span style="color:#ff79c6">&amp;</span>tls.Config{InsecureSkipVerify: <span style="color:#ff79c6">true</span>},
+	}
+	client <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>http.Client{Transport: tr}
+	res, _ <span style="color:#ff79c6">:=</span> client.<span style="color:#50fa7b">Do</span>(authReq)
+	<span style="color:#ff79c6">return</span> res
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;crypto/tls&#34;</span>
+	<span style="color:#f1fa8c">&#34;net/http&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">doAuthReq</span>(authReq <span style="color:#ff79c6">*</span>http.Request) <span style="color:#ff79c6">*</span>http.Response {
+	tr <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>http.Transport{
+		TLSClientConfig: <span style="color:#ff79c6">&amp;</span>tls.Config{InsecureSkipVerify: <span style="color:#ff79c6">false</span>},
+	}
+	client <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>http.Client{Transport: tr}
+	res, _ <span style="color:#ff79c6">:=</span> client.<span style="color:#50fa7b">Do</span>(authReq)
+	<span style="color:#ff79c6">return</span> res
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="15-敏感数据保护">1.5 敏感数据保护</h3>
+<h4 id="151必须敏感信息访问">1.5.1【必须】敏感信息访问</h4>
+<ul>
+<li>禁止将敏感信息硬编码在程序中，既可能会将敏感信息暴露给攻击者，也会增加代码管理和维护的难度</li>
+<li>使用配置中心系统统一托管密钥等敏感信息</li>
+</ul>
+<h4 id="152必须敏感数据输出">1.5.2【必须】敏感数据输出</h4>
+<ul>
+<li>只输出必要的最小数据集，避免多余字段暴露引起敏感信息泄露</li>
+<li>不能在日志保存密码（包括明文密码和密文密码）、密钥和其它敏感信息</li>
+<li>对于必须输出的敏感信息，必须进行合理脱敏展示</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">serve</span>() {
+	http.<span style="color:#50fa7b">HandleFunc</span>(<span style="color:#f1fa8c">&#34;/register&#34;</span>, <span style="color:#8be9fd;font-style:italic">func</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+		r.<span style="color:#50fa7b">ParseForm</span>()
+		user <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;user&#34;</span>)
+		pw <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;password&#34;</span>)
+
+		log.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;Registering new user %s with password %s.\n&#34;</span>, user, pw)
+	})
+	http.<span style="color:#50fa7b">ListenAndServe</span>(<span style="color:#f1fa8c">&#34;:80&#34;</span>, <span style="color:#ff79c6">nil</span>)
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">serve1</span>() {
+	http.<span style="color:#50fa7b">HandleFunc</span>(<span style="color:#f1fa8c">&#34;/register&#34;</span>, <span style="color:#8be9fd;font-style:italic">func</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+		r.<span style="color:#50fa7b">ParseForm</span>()
+		user <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;user&#34;</span>)
+		pw <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;password&#34;</span>)
+
+		log.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;Registering new user %s.\n&#34;</span>, user)
+
+		<span style="color:#6272a4">// ...
+</span><span style="color:#6272a4"></span>		<span style="color:#50fa7b">use</span>(pw)
+	})
+	http.<span style="color:#50fa7b">ListenAndServe</span>(<span style="color:#f1fa8c">&#34;:80&#34;</span>, <span style="color:#ff79c6">nil</span>)
+}
+</code></pre></div><ul>
+<li>避免通过GET方法、代码注释、自动填充、缓存等方式泄露敏感信息</li>
+</ul>
+<h4 id="153必须敏感数据存储">1.5.3【必须】敏感数据存储</h4>
+<ul>
+<li>敏感数据应使用SHA2、RSA等算法进行加密存储</li>
+<li>敏感数据应使用独立的存储层，并在访问层开启访问控制</li>
+<li>包含敏感信息的临时文件或缓存一旦不再需要应立刻删除</li>
+</ul>
+<h4 id="154必须异常处理和日志记录">1.5.4【必须】异常处理和日志记录</h4>
+<ul>
+<li>应合理使用panic、recover、defer处理系统异常，避免出错信息输出到前端</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">defer</span> <span style="color:#8be9fd;font-style:italic">func</span> () {
+	<span style="color:#ff79c6">if</span> r <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">recover</span>(); r <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Recovered in start()&#34;</span>)
+	}
+}()
+</code></pre></div><ul>
+<li>对外环境禁止开启debug模式，或将程序运行日志输出到前端</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">// bad
+dlv --listen<span style="color:#ff79c6">=</span>:2345 --headless<span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span> --api-version<span style="color:#ff79c6">=</span><span style="color:#bd93f9">2</span> debug test.go
+// good
+dlv debug test.go
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="16-加密解密">1.6 加密解密</h3>
+<h4 id="161必须不得硬编码密码密钥">1.6.1【必须】不得硬编码密码/密钥</h4>
+<ul>
+<li>在进行用户登陆，加解密算法等操作时，不得在代码里硬编码密钥或密码，可通过变换算法或者配置等方式设置密码或者密钥。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">const</span> (
+	user     = <span style="color:#f1fa8c">&#34;dbuser&#34;</span>
+	password = <span style="color:#f1fa8c">&#34;s3cretp4ssword&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">connect</span>() <span style="color:#ff79c6">*</span>sql.DB {
+	connStr <span style="color:#ff79c6">:=</span> fmt.<span style="color:#50fa7b">Sprintf</span>(<span style="color:#f1fa8c">&#34;postgres://%s:%s@localhost/pqgotest&#34;</span>, user, password)
+	db, err <span style="color:#ff79c6">:=</span> sql.<span style="color:#50fa7b">Open</span>(<span style="color:#f1fa8c">&#34;postgres&#34;</span>, connStr)
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">nil</span>
+	}
+	<span style="color:#ff79c6">return</span> db
+}
+
+<span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">var</span> (
+	commonkey = []<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;0123456789abcdef&#34;</span>)
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">AesEncrypt</span>(plaintext <span style="color:#8be9fd">string</span>) (<span style="color:#8be9fd">string</span>, <span style="color:#8be9fd">error</span>) {
+	block, err <span style="color:#ff79c6">:=</span> aes.<span style="color:#50fa7b">NewCipher</span>(commonkey)
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		<span style="color:#ff79c6">return</span> <span style="color:#f1fa8c">&#34;&#34;</span>, err
+	}
+}
+</code></pre></div><h4 id="162必须密钥存储安全">1.6.2【必须】密钥存储安全</h4>
+<ul>
+<li>在使用对称密码算法时，需要保护好加密密钥。当算法涉及敏感、业务数据时，可通过非对称算法协商加密密钥。其他较为不敏感的数据加密，可以通过变换算法等方式保护密钥。</li>
+</ul>
+<h4 id="163推荐不使用弱密码算法">1.6.3【推荐】不使用弱密码算法</h4>
+<ul>
+<li>在使用加密算法时，不建议使用加密强度较弱的算法。</li>
+</ul>
+<pre tabindex="0"><code>// bad
+crypto/des，crypto/md5，crypto/sha1，crypto/rc4等。
+
+// good
+crypto/rsa，crypto/aes等。
+</code></pre><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="17-正则表达式">1.7 正则表达式</h3>
+<h4 id="171推荐使用regexp进行正则表达式匹配">1.7.1【推荐】使用regexp进行正则表达式匹配</h4>
+<ul>
+<li>正则表达式编写不恰当可被用于DoS攻击，造成服务不可用，推荐使用regexp包进行正则表达式匹配。regexp保证了线性时间性能和优雅的失败：对解析器、编译器和执行引擎都进行了内存限制。但regexp不支持以下正则表达式特性，如业务依赖这些特性，则regexp不适合使用。
+<ul>
+<li>回溯引用<a href="https://www.regular-expressions.info/backref.html">Backreferences</a></li>
+<li>查看<a href="https://www.regular-expressions.info/lookaround.html">Lookaround</a></li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span>matched, err <span style="color:#ff79c6">:=</span> regexp.<span style="color:#50fa7b">MatchString</span>(<span style="color:#f1fa8c">`a.b`</span>, <span style="color:#f1fa8c">&#34;aaxbb&#34;</span>)
+fmt.<span style="color:#50fa7b">Println</span>(matched) <span style="color:#6272a4">// true
+</span><span style="color:#6272a4"></span>fmt.<span style="color:#50fa7b">Println</span>(err)     <span style="color:#6272a4">// nil
+</span></code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h1 id="后台类">后台类</h1>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h2 id="1-代码实现类-1">1 代码实现类</h2>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="11-输入校验">1.1 输入校验</h3>
+<h4 id="111必须按类型进行数据校验">1.1.1【必须】按类型进行数据校验</h4>
+<ul>
+<li>所有外部输入的参数，应使用<code>validator</code>进行白名单校验，校验内容包括但不限于数据长度、数据范围、数据类型与格式，校验不通过的应当拒绝</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;fmt&#34;</span>
+	<span style="color:#f1fa8c">&#34;github.com/go-playground/validator/v10&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">var</span> validate <span style="color:#ff79c6">*</span>validator.Validate
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">validateVariable</span>() {
+	myEmail <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;abc@tencent.com&#34;</span>
+	errs <span style="color:#ff79c6">:=</span> validate.<span style="color:#50fa7b">Var</span>(myEmail, <span style="color:#f1fa8c">&#34;required,email&#34;</span>)
+	<span style="color:#ff79c6">if</span> errs <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(errs)
+		<span style="color:#ff79c6">return</span>
+		<span style="color:#6272a4">//停止执行
+</span><span style="color:#6272a4"></span>	}
+	<span style="color:#6272a4">// 验证通过，继续执行
+</span><span style="color:#6272a4"></span>	<span style="color:#ff79c6">...</span>
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	validate = validator.<span style="color:#50fa7b">New</span>()
+	<span style="color:#50fa7b">validateVariable</span>()
+}
+</code></pre></div><ul>
+<li>无法通过白名单校验的应使用<code>html.EscapeString</code>、<code>text/template</code>或<code>bluemonday</code>对<code>&lt;, &gt;, &amp;, ',&quot;</code>等字符进行过滤或编码</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;text/template&#34;</span>
+)
+
+<span style="color:#6272a4">// TestHTMLEscapeString HTML特殊字符转义
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>(inputValue <span style="color:#8be9fd">string</span>) <span style="color:#8be9fd">string</span> {
+	escapedResult <span style="color:#ff79c6">:=</span> template.<span style="color:#50fa7b">HTMLEscapeString</span>(inputValue)
+	<span style="color:#ff79c6">return</span> escapedResult
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="12-sql操作">1.2 SQL操作</h3>
+<h4 id="121必须sql语句默认使用预编译并绑定变量">1.2.1【必须】SQL语句默认使用预编译并绑定变量</h4>
+<ul>
+<li>使用<code>database/sql</code>的prepare、Query或使用GORM等ORM执行SQL操作</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;github.com/jinzhu/gorm&#34;</span>
+	_ <span style="color:#f1fa8c">&#34;github.com/jinzhu/gorm/dialects/sqlite&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">type</span> Product <span style="color:#8be9fd;font-style:italic">struct</span> {
+	gorm.Model
+	Code  <span style="color:#8be9fd">string</span>
+	Price <span style="color:#8be9fd">uint</span>
+}
+
+<span style="color:#ff79c6">...</span>
+<span style="color:#8be9fd;font-style:italic">var</span> product Product
+<span style="color:#ff79c6">...</span>
+db.<span style="color:#50fa7b">First</span>(<span style="color:#ff79c6">&amp;</span>product, <span style="color:#bd93f9">1</span>)
+</code></pre></div><ul>
+<li>使用参数化查询，禁止拼接SQL语句，另外对于传入参数用于order by或表名的需要通过校验</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;database/sql&#34;</span>
+	<span style="color:#f1fa8c">&#34;fmt&#34;</span>
+	<span style="color:#f1fa8c">&#34;net/http&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">handler</span>(db <span style="color:#ff79c6">*</span>sql.DB, req <span style="color:#ff79c6">*</span>http.Request) {
+	q <span style="color:#ff79c6">:=</span> fmt.<span style="color:#50fa7b">Sprintf</span>(<span style="color:#f1fa8c">&#34;SELECT ITEM,PRICE FROM PRODUCT WHERE ITEM_CATEGORY=&#39;%s&#39; ORDER BY PRICE&#34;</span>,
+		req.URL.<span style="color:#50fa7b">Query</span>()[<span style="color:#f1fa8c">&#34;category&#34;</span>])
+	db.<span style="color:#50fa7b">Query</span>(q)
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">handlerGood</span>(db <span style="color:#ff79c6">*</span>sql.DB, req <span style="color:#ff79c6">*</span>http.Request) {
+	<span style="color:#6272a4">// 使用?占位符
+</span><span style="color:#6272a4"></span>	q <span style="color:#ff79c6">:=</span> <span style="color:#f1fa8c">&#34;SELECT ITEM,PRICE FROM PRODUCT WHERE ITEM_CATEGORY=&#39;?&#39; ORDER BY PRICE&#34;</span>
+	db.<span style="color:#50fa7b">Query</span>(q, req.URL.<span style="color:#50fa7b">Query</span>()[<span style="color:#f1fa8c">&#34;category&#34;</span>])
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="13-网络请求">1.3 网络请求</h3>
+<h4 id="131必须资源请求过滤验证">1.3.1【必须】资源请求过滤验证</h4>
+<ul>
+<li>
+<p>使用<code>&quot;net/http&quot;</code>下的方法<code>http.Get(url)</code>、<code>http.Post(url, contentType, body)</code>、<code>http.Head(url)</code>、<code>http.PostForm(url, data)</code>、<code>http.Do(req)</code>时，如变量值外部可控（指从参数中动态获取），应对请求目标进行严格的安全校验。</p>
+</li>
+<li>
+<p>如请求资源域名归属固定的范围，如只允许<code>a.qq.com</code>和<code>b.qq.com</code>，应做白名单限制。如不适用白名单，则推荐的校验逻辑步骤是：</p>
+<ul>
+<li>
+<p>第 1 步、只允许HTTP或HTTPS协议</p>
+</li>
+<li>
+<p>第 2 步、解析目标URL，获取其HOST</p>
+</li>
+<li>
+<p>第 3 步、解析HOST，获取HOST指向的IP地址转换成Long型</p>
+</li>
+<li>
+<p>第 4 步、检查IP地址是否为内网IP，网段有：</p>
+<pre tabindex="0"><code>// 以RFC定义的专有网络为例，如有自定义私有网段亦应加入禁止访问列表。
+10.0.0.0/8
+172.16.0.0/12
+192.168.0.0/16
+127.0.0.0/8
+</code></pre></li>
+<li>
+<p>第 5 步、请求URL</p>
+</li>
+<li>
+<p>第 6 步、如有跳转，跳转后执行1，否则绑定经校验的ip和域名，对URL发起请求</p>
+</li>
+</ul>
+</li>
+<li>
+<p>官方库<code>encoding/xml</code>不支持外部实体引用，使用该库可避免xxe漏洞</p>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;encoding/xml&#34;</span>
+	<span style="color:#f1fa8c">&#34;fmt&#34;</span>
+	<span style="color:#f1fa8c">&#34;os&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	<span style="color:#8be9fd;font-style:italic">type</span> Person <span style="color:#8be9fd;font-style:italic">struct</span> {
+		XMLName  xml.Name <span style="color:#f1fa8c">`xml:&#34;person&#34;`</span>
+		Id       <span style="color:#8be9fd">int</span>      <span style="color:#f1fa8c">`xml:&#34;id,attr&#34;`</span>
+		UserName <span style="color:#8be9fd">string</span>   <span style="color:#f1fa8c">`xml:&#34;name&gt;first&#34;`</span>
+		Comment  <span style="color:#8be9fd">string</span>   <span style="color:#f1fa8c">`xml:&#34;,comment&#34;`</span>
+	}
+
+	v <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>Person{Id: <span style="color:#bd93f9">13</span>, UserName: <span style="color:#f1fa8c">&#34;John&#34;</span>}
+	v.Comment = <span style="color:#f1fa8c">&#34; Need more details. &#34;</span>
+
+	enc <span style="color:#ff79c6">:=</span> xml.<span style="color:#50fa7b">NewEncoder</span>(os.Stdout)
+	enc.<span style="color:#50fa7b">Indent</span>(<span style="color:#f1fa8c">&#34;  &#34;</span>, <span style="color:#f1fa8c">&#34;    &#34;</span>)
+	<span style="color:#ff79c6">if</span> err <span style="color:#ff79c6">:=</span> enc.<span style="color:#50fa7b">Encode</span>(v); err <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;error: %v\n&#34;</span>, err)
+	}
+
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="14-服务器端渲染">1.4 服务器端渲染</h3>
+<h4 id="141必须模板渲染过滤验证">1.4.1【必须】模板渲染过滤验证</h4>
+<ul>
+<li>使用<code>text/template</code>或者<code>html/template</code>渲染模板时禁止将外部输入参数引入模板，或仅允许引入白名单内字符。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">handler</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+	r.<span style="color:#50fa7b">ParseForm</span>()
+	x <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;name&#34;</span>)
+
+	<span style="color:#8be9fd;font-style:italic">var</span> tmpl = <span style="color:#f1fa8c">`&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;body&gt;
+</span><span style="color:#f1fa8c">    &lt;form action=&#34;/&#34; method=&#34;post&#34;&gt;
+</span><span style="color:#f1fa8c">        First name:&lt;br&gt;
+</span><span style="color:#f1fa8c">    &lt;input type=&#34;text&#34; name=&#34;name&#34; value=&#34;&#34;&gt;
+</span><span style="color:#f1fa8c">    &lt;input type=&#34;submit&#34; value=&#34;Submit&#34;&gt;
+</span><span style="color:#f1fa8c">    &lt;/form&gt;&lt;p&gt;`</span> <span style="color:#ff79c6">+</span> x <span style="color:#ff79c6">+</span> <span style="color:#f1fa8c">` &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;`</span>
+
+	t <span style="color:#ff79c6">:=</span> template.<span style="color:#50fa7b">New</span>(<span style="color:#f1fa8c">&#34;main&#34;</span>)
+	t, _ = t.<span style="color:#50fa7b">Parse</span>(tmpl)
+	t.<span style="color:#50fa7b">Execute</span>(w, <span style="color:#f1fa8c">&#34;Hello&#34;</span>)
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;fmt&#34;</span>
+	<span style="color:#f1fa8c">&#34;github.com/go-playground/validator/v10&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">var</span> validate <span style="color:#ff79c6">*</span>validator.Validate
+validate = validator.<span style="color:#50fa7b">New</span>()
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">validateVariable</span>(val) {
+	errs <span style="color:#ff79c6">:=</span> validate.<span style="color:#50fa7b">Var</span>(val, <span style="color:#f1fa8c">&#34;gte=1,lte=100&#34;</span>) <span style="color:#6272a4">// 限制必须是1-100的正整数
+</span><span style="color:#6272a4"></span>	<span style="color:#ff79c6">if</span> errs <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+		fmt.<span style="color:#50fa7b">Println</span>(errs)
+		<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">false</span>
+	}
+	<span style="color:#ff79c6">return</span> <span style="color:#ff79c6">true</span>
+}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">handler</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+	r.<span style="color:#50fa7b">ParseForm</span>()
+	x <span style="color:#ff79c6">:=</span> r.Form.<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;name&#34;</span>)
+
+	<span style="color:#ff79c6">if</span> <span style="color:#50fa7b">validateVariable</span>(x) {
+		<span style="color:#8be9fd;font-style:italic">var</span> tmpl = <span style="color:#f1fa8c">`&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;body&gt;
+</span><span style="color:#f1fa8c">            &lt;form action=&#34;/&#34; method=&#34;post&#34;&gt;
+</span><span style="color:#f1fa8c">            First name:&lt;br&gt;
+</span><span style="color:#f1fa8c">            &lt;input type=&#34;text&#34; name=&#34;name&#34; value=&#34;&#34;&gt;
+</span><span style="color:#f1fa8c">            &lt;input type=&#34;submit&#34; value=&#34;Submit&#34;&gt;
+</span><span style="color:#f1fa8c">            &lt;/form&gt;&lt;p&gt;`</span> <span style="color:#ff79c6">+</span> x <span style="color:#ff79c6">+</span> <span style="color:#f1fa8c">` &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;`</span>
+		t <span style="color:#ff79c6">:=</span> template.<span style="color:#50fa7b">New</span>(<span style="color:#f1fa8c">&#34;main&#34;</span>)
+		t, _ = t.<span style="color:#50fa7b">Parse</span>(tmpl)
+		t.<span style="color:#50fa7b">Execute</span>(w, <span style="color:#f1fa8c">&#34;Hello&#34;</span>)
+	} <span style="color:#ff79c6">else</span> {
+		<span style="color:#6272a4">// ...
+</span><span style="color:#6272a4"></span>	}
+}
+
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="15-web跨域">1.5 Web跨域</h3>
+<h4 id="151必须跨域资源共享cors限制请求来源">1.5.1【必须】跨域资源共享CORS限制请求来源</h4>
+<ul>
+<li>CORS请求保护不当可导致敏感信息泄漏，因此应当严格设置Access-Control-Allow-Origin使用同源策略进行保护。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span>c <span style="color:#ff79c6">:=</span> cors.<span style="color:#50fa7b">New</span>(cors.Options{
+	AllowedOrigins:   []<span style="color:#8be9fd">string</span>{<span style="color:#f1fa8c">&#34;http://qq.com&#34;</span>, <span style="color:#f1fa8c">&#34;https://qq.com&#34;</span>},
+	AllowCredentials: <span style="color:#ff79c6">true</span>,
+	Debug:            <span style="color:#ff79c6">false</span>,
+})
+
+<span style="color:#6272a4">// 引入中间件
+</span><span style="color:#6272a4"></span>handler = c.<span style="color:#50fa7b">Handler</span>(handler)
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="16-响应输出">1.6 响应输出</h3>
+<h4 id="161-必须设置正确的http响应包类型">1.6.1 【必须】设置正确的HTTP响应包类型</h4>
+<ul>
+<li>响应头Content-Type与实际响应内容，应保持一致。如：API响应数据类型是json，则响应头使用<code>application/json</code>；若为xml，则设置为<code>text/xml</code>。</li>
+</ul>
+<h4 id="162-必须添加安全响应头">1.6.2 【必须】添加安全响应头</h4>
+<ul>
+<li>所有接口、页面，添加响应头 <code>X-Content-Type-Options: nosniff</code>。</li>
+<li>所有接口、页面，添加响应头<code>X-Frame-Options </code>。按需合理设置其允许范围，包括：<code>DENY</code>、<code>SAMEORIGIN</code>、<code>ALLOW-FROM origin</code>。用法参考：<a href="https://developer.mozilla.org/zh-CN/docs/Web/HTTP/X-Frame-Options">MDN文档</a></li>
+</ul>
+<h4 id="163必须外部输入拼接到http响应头中需进行过滤">1.6.3【必须】外部输入拼接到HTTP响应头中需进行过滤</h4>
+<ul>
+<li>应尽量避免外部可控参数拼接到HTTP响应头中，如业务需要则需要过滤掉<code>\r</code>、<code>\n</code>等换行符，或者拒绝携带换行符号的外部输入。</li>
+</ul>
+<h4 id="164必须外部输入拼接到response页面前进行编码处理">1.6.4【必须】外部输入拼接到response页面前进行编码处理</h4>
+<ul>
+<li>直出html页面或使用模板生成html页面的，推荐使用<code>text/template</code>自动编码，或者使用<code>html.EscapeString</code>或<code>text/template</code>对<code>&lt;, &gt;, &amp;, ',&quot;</code>等字符进行编码。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;html/template&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">outtemplate</span>(w http.ResponseWriter, r <span style="color:#ff79c6">*</span>http.Request) {
+	param1 <span style="color:#ff79c6">:=</span> r.URL.<span style="color:#50fa7b">Query</span>().<span style="color:#50fa7b">Get</span>(<span style="color:#f1fa8c">&#34;param1&#34;</span>)
+	tmpl <span style="color:#ff79c6">:=</span> template.<span style="color:#50fa7b">New</span>(<span style="color:#f1fa8c">&#34;hello&#34;</span>)
+	tmpl, _ = tmpl.<span style="color:#50fa7b">Parse</span>(<span style="color:#f1fa8c">`</span><span style="color:#ff79c6">{{</span>define <span style="color:#f1fa8c">&#34;T&#34;</span><span style="color:#ff79c6">}}{{</span><span style="color:#50fa7b">.</span><span style="color:#ff79c6">}}{{</span><span style="color:#ff79c6">end</span><span style="color:#ff79c6">}}</span><span style="color:#f1fa8c">`</span>)
+	tmpl.<span style="color:#50fa7b">ExecuteTemplate</span>(w, <span style="color:#f1fa8c">&#34;T&#34;</span>, param1)
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="17-会话管理">1.7 会话管理</h3>
+<h4 id="171必须安全维护session信息">1.7.1【必须】安全维护session信息</h4>
+<ul>
+<li>用户登录时应重新生成session，退出登录后应清理session。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;github.com/gorilla/handlers&#34;</span>
+	<span style="color:#f1fa8c">&#34;github.com/gorilla/mux&#34;</span>
+	<span style="color:#f1fa8c">&#34;net/http&#34;</span>
+)
+
+<span style="color:#6272a4">// 创建cookie
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">setToken</span>(res http.ResponseWriter, req <span style="color:#ff79c6">*</span>http.Request) {
+	expireToken <span style="color:#ff79c6">:=</span> time.<span style="color:#50fa7b">Now</span>().<span style="color:#50fa7b">Add</span>(time.Minute <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">30</span>).<span style="color:#50fa7b">Unix</span>()
+	expireCookie <span style="color:#ff79c6">:=</span> time.<span style="color:#50fa7b">Now</span>().<span style="color:#50fa7b">Add</span>(time.Minute <span style="color:#ff79c6">*</span> <span style="color:#bd93f9">30</span>)
+
+	<span style="color:#6272a4">//...
+</span><span style="color:#6272a4"></span>
+	cookie <span style="color:#ff79c6">:=</span> http.Cookie{
+		Name:     <span style="color:#f1fa8c">&#34;Auth&#34;</span>,
+		Value:    signedToken,
+		Expires:  expireCookie, <span style="color:#6272a4">// 过期失效
+</span><span style="color:#6272a4"></span>		HttpOnly: <span style="color:#ff79c6">true</span>,
+		Path:     <span style="color:#f1fa8c">&#34;/&#34;</span>,
+		Domain:   <span style="color:#f1fa8c">&#34;127.0.0.1&#34;</span>,
+		Secure:   <span style="color:#ff79c6">true</span>,
+	}
+
+	http.<span style="color:#50fa7b">SetCookie</span>(res, <span style="color:#ff79c6">&amp;</span>cookie)
+	http.<span style="color:#50fa7b">Redirect</span>(res, req, <span style="color:#f1fa8c">&#34;/profile&#34;</span>, <span style="color:#bd93f9">307</span>)
+}
+
+<span style="color:#6272a4">// 删除cookie
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">logout</span>(res http.ResponseWriter, req <span style="color:#ff79c6">*</span>http.Request) {
+	deleteCookie <span style="color:#ff79c6">:=</span> http.Cookie{
+		Name:    <span style="color:#f1fa8c">&#34;Auth&#34;</span>,
+		Value:   <span style="color:#f1fa8c">&#34;none&#34;</span>,
+		Expires: time.<span style="color:#50fa7b">Now</span>(),
+	}
+	http.<span style="color:#50fa7b">SetCookie</span>(res, <span style="color:#ff79c6">&amp;</span>deleteCookie)
+	<span style="color:#ff79c6">return</span>
+}
+</code></pre></div><h4 id="172必须csrf防护">1.7.2【必须】CSRF防护</h4>
+<ul>
+<li>涉及系统敏感操作或可读取敏感信息的接口应校验<code>Referer</code>或添加<code>csrf_token</code>。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;github.com/gorilla/csrf&#34;</span>
+	<span style="color:#f1fa8c">&#34;github.com/gorilla/mux&#34;</span>
+	<span style="color:#f1fa8c">&#34;net/http&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	r <span style="color:#ff79c6">:=</span> mux.<span style="color:#50fa7b">NewRouter</span>()
+	r.<span style="color:#50fa7b">HandleFunc</span>(<span style="color:#f1fa8c">&#34;/signup&#34;</span>, ShowSignupForm)
+	r.<span style="color:#50fa7b">HandleFunc</span>(<span style="color:#f1fa8c">&#34;/signup/post&#34;</span>, SubmitSignupForm)
+	<span style="color:#6272a4">// 使用csrf_token验证
+</span><span style="color:#6272a4"></span>	http.<span style="color:#50fa7b">ListenAndServe</span>(<span style="color:#f1fa8c">&#34;:8000&#34;</span>,
+		csrf.<span style="color:#50fa7b">Protect</span>([]<span style="color:#8be9fd;font-style:italic">byte</span>(<span style="color:#f1fa8c">&#34;32-byte-long-auth-key&#34;</span>))(r))
+}
+</code></pre></div><p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="18-访问控制">1.8 访问控制</h3>
+<h4 id="181必须默认鉴权">1.8.1【必须】默认鉴权</h4>
+<ul>
+<li>
+<p>除非资源完全可对外开放，否则系统默认进行身份认证，使用白名单的方式放开不需要认证的接口或页面。</p>
+</li>
+<li>
+<p>根据资源的机密程度和用户角色，以最小权限原则，设置不同级别的权限，如完全公开、登录可读、登录可写、特定用户可读、特定用户可写等</p>
+</li>
+<li>
+<p>涉及用户自身相关的数据的读写必须验证登录态用户身份及其权限，避免越权操作</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#6272a4">-- 伪代码
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">select</span> id <span style="color:#ff79c6">from</span> <span style="color:#ff79c6">table</span> <span style="color:#ff79c6">where</span> id<span style="color:#ff79c6">=</span>:id <span style="color:#ff79c6">and</span> userid<span style="color:#ff79c6">=</span><span style="color:#ff79c6">session</span>.userid
+</code></pre></div></li>
+<li>
+<p>没有独立账号体系的外网服务使用<code>QQ</code>或<code>微信</code>登录，内网服务使用<code>统一登录服务</code>登录，其他使用账号密码登录的服务需要增加验证码等二次验证</p>
+</li>
+</ul>
+<p><!-- raw HTML omitted --><!-- raw HTML omitted --></p>
+<h3 id="19-并发保护">1.9 并发保护</h3>
+<h4 id="191必须禁止在闭包中直接调用循环变量">1.9.1【必须】禁止在闭包中直接调用循环变量</h4>
+<ul>
+<li>在循环中启动协程，当协程中使用到了循环的索引值，由于多个协程同时使用同一个变量会产生数据竞争，造成执行结果异常。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	runtime.<span style="color:#50fa7b">GOMAXPROCS</span>(runtime.<span style="color:#50fa7b">NumCPU</span>())
+	<span style="color:#8be9fd;font-style:italic">var</span> group sync.WaitGroup
+
+	<span style="color:#ff79c6">for</span> i <span style="color:#ff79c6">:=</span> <span style="color:#bd93f9">0</span>; i &lt; <span style="color:#bd93f9">5</span>; i<span style="color:#ff79c6">++</span> {
+		group.<span style="color:#50fa7b">Add</span>(<span style="color:#bd93f9">1</span>)
+		<span style="color:#ff79c6">go</span> <span style="color:#8be9fd;font-style:italic">func</span>() {
+			<span style="color:#ff79c6">defer</span> group.<span style="color:#50fa7b">Done</span>()
+			fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;%-2d&#34;</span>, i) <span style="color:#6272a4">// 这里打印的i不是所期望的
+</span><span style="color:#6272a4"></span>		}()
+	}
+	group.<span style="color:#50fa7b">Wait</span>()
+}
+
+<span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	runtime.<span style="color:#50fa7b">GOMAXPROCS</span>(runtime.<span style="color:#50fa7b">NumCPU</span>())
+	<span style="color:#8be9fd;font-style:italic">var</span> group sync.WaitGroup
+
+	<span style="color:#ff79c6">for</span> i <span style="color:#ff79c6">:=</span> <span style="color:#bd93f9">0</span>; i &lt; <span style="color:#bd93f9">5</span>; i<span style="color:#ff79c6">++</span> {
+		group.<span style="color:#50fa7b">Add</span>(<span style="color:#bd93f9">1</span>)
+		<span style="color:#ff79c6">go</span> <span style="color:#8be9fd;font-style:italic">func</span>(j <span style="color:#8be9fd">int</span>) {
+			<span style="color:#ff79c6">defer</span> <span style="color:#8be9fd;font-style:italic">func</span>() {
+				<span style="color:#ff79c6">if</span> r <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">recover</span>(); r <span style="color:#ff79c6">!=</span> <span style="color:#ff79c6">nil</span> {
+					fmt.<span style="color:#50fa7b">Println</span>(<span style="color:#f1fa8c">&#34;Recovered in start()&#34;</span>)
+				}
+				group.<span style="color:#50fa7b">Done</span>()
+			}()
+			fmt.<span style="color:#50fa7b">Printf</span>(<span style="color:#f1fa8c">&#34;%-2d&#34;</span>, j) <span style="color:#6272a4">// 闭包内部使用局部变量
+</span><span style="color:#6272a4"></span>		}(i) <span style="color:#6272a4">// 把循环变量显式地传给协程
+</span><span style="color:#6272a4"></span>	}
+	group.<span style="color:#50fa7b">Wait</span>()
+}
+</code></pre></div><h4 id="192必须禁止并发写map">1.9.2【必须】禁止并发写map</h4>
+<ul>
+<li>并发写map容易造成程序崩溃并异常退出，建议加锁保护</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// bad
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	m <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>(<span style="color:#8be9fd;font-style:italic">map</span>[<span style="color:#8be9fd">int</span>]<span style="color:#8be9fd">int</span>)
+	<span style="color:#6272a4">// 并发读写
+</span><span style="color:#6272a4"></span>	<span style="color:#ff79c6">go</span> <span style="color:#8be9fd;font-style:italic">func</span>() {
+		<span style="color:#ff79c6">for</span> {
+			_ = m[<span style="color:#bd93f9">1</span>]
+		}
+	}()
+	<span style="color:#ff79c6">go</span> <span style="color:#8be9fd;font-style:italic">func</span>() {
+		<span style="color:#ff79c6">for</span> {
+			m[<span style="color:#bd93f9">2</span>] = <span style="color:#bd93f9">1</span>
+		}
+	}()
+	<span style="color:#ff79c6">select</span> {}
+}
+</code></pre></div><h4 id="193必须确保并发安全">1.9.3【必须】确保并发安全</h4>
+<p>敏感操作如果未作并发安全限制，可导致数据读写异常，造成业务逻辑限制被绕过。可通过同步锁或者原子操作进行防护。</p>
+<p>通过同步锁共享内存</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">var</span> count <span style="color:#8be9fd">int</span>
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">Count</span>(lock <span style="color:#ff79c6">*</span>sync.Mutex) {
+	lock.<span style="color:#50fa7b">Lock</span>() <span style="color:#6272a4">// 加写锁
+</span><span style="color:#6272a4"></span>	count<span style="color:#ff79c6">++</span>
+	fmt.<span style="color:#50fa7b">Println</span>(count)
+	lock.<span style="color:#50fa7b">Unlock</span>() <span style="color:#6272a4">// 解写锁，任何一个Lock()或RLock()均需要保证对应有Unlock()或RUnlock()
+</span><span style="color:#6272a4"></span>}
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	lock <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">&amp;</span>sync.Mutex{}
+	<span style="color:#ff79c6">for</span> i <span style="color:#ff79c6">:=</span> <span style="color:#bd93f9">0</span>; i &lt; <span style="color:#bd93f9">10</span>; i<span style="color:#ff79c6">++</span> {
+		<span style="color:#ff79c6">go</span> <span style="color:#50fa7b">Count</span>(lock) <span style="color:#6272a4">// 传递指针是为了防止函数内的锁和调用锁不一致
+</span><span style="color:#6272a4"></span>	}
+	<span style="color:#ff79c6">for</span> {
+		lock.<span style="color:#50fa7b">Lock</span>()
+		c <span style="color:#ff79c6">:=</span> count
+		lock.<span style="color:#50fa7b">Unlock</span>()
+		runtime.<span style="color:#50fa7b">Gosched</span>() <span style="color:#6272a4">// 交出时间片给协程
+</span><span style="color:#6272a4"></span>		<span style="color:#ff79c6">if</span> c &gt; <span style="color:#bd93f9">10</span> {
+			<span style="color:#ff79c6">break</span>
+		}
+	}
+}
+</code></pre></div><ul>
+<li>使用<code>sync/atomic</code>执行原子操作</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#6272a4">// good
+</span><span style="color:#6272a4"></span><span style="color:#ff79c6">import</span> (
+	<span style="color:#f1fa8c">&#34;sync&#34;</span>
+	<span style="color:#f1fa8c">&#34;sync/atomic&#34;</span>
+)
+
+<span style="color:#8be9fd;font-style:italic">func</span> <span style="color:#50fa7b">main</span>() {
+	<span style="color:#8be9fd;font-style:italic">type</span> Map <span style="color:#8be9fd;font-style:italic">map</span>[<span style="color:#8be9fd">string</span>]<span style="color:#8be9fd">string</span>
+	<span style="color:#8be9fd;font-style:italic">var</span> m atomic.Value
+	m.<span style="color:#50fa7b">Store</span>(<span style="color:#8be9fd;font-style:italic">make</span>(Map))
+	<span style="color:#8be9fd;font-style:italic">var</span> mu sync.Mutex <span style="color:#6272a4">// used only by writers
+</span><span style="color:#6272a4"></span>	read <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">func</span>(key <span style="color:#8be9fd">string</span>) (val <span style="color:#8be9fd">string</span>) {
+		m1 <span style="color:#ff79c6">:=</span> m.<span style="color:#50fa7b">Load</span>().(Map)
+		<span style="color:#ff79c6">return</span> m1[key]
+	}
+	insert <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">func</span>(key, val <span style="color:#8be9fd">string</span>) {
+		mu.<span style="color:#50fa7b">Lock</span>() <span style="color:#6272a4">// 与潜在写入同步
+</span><span style="color:#6272a4"></span>		<span style="color:#ff79c6">defer</span> mu.<span style="color:#50fa7b">Unlock</span>()
+		m1 <span style="color:#ff79c6">:=</span> m.<span style="color:#50fa7b">Load</span>().(Map) <span style="color:#6272a4">// 导入struct当前数据
+</span><span style="color:#6272a4"></span>		m2 <span style="color:#ff79c6">:=</span> <span style="color:#8be9fd;font-style:italic">make</span>(Map)      <span style="color:#6272a4">// 创建新值
+</span><span style="color:#6272a4"></span>		<span style="color:#ff79c6">for</span> k, v <span style="color:#ff79c6">:=</span> <span style="color:#ff79c6">range</span> m1 {
+			m2[k] = v
+		}
+		m2[key] = val
+		m.<span style="color:#50fa7b">Store</span>(m2) <span style="color:#6272a4">// 用新的替代当前对象
+</span><span style="color:#6272a4"></span>	}
+	_, _ = read, insert
+}
+</code></pre></div>
+
+                
+                
+<div class="entry-shang text-center">
+    
+	    <p>「真诚赞赏，手留余香」</p>
+	
+	<button class="zs show-zs btn btn-bred">赞赏支持</button>
+</div>
+<div class="zs-modal-bg"></div>
+<div class="zs-modal-box">
+	<div class="zs-modal-head">
+		<button type="button" class="close">×</button>
+		<span class="author"><a href="https://pengjl.com">Pengjls Blog</a></span>
+        
+	        <p class="tip"><i></i><span>微信扫码,真诚赞赏，手留余香</span></p>
+		
+	</div>
+	
+	<img src="/img/reward/wechat.png"/>
+	
+</div>
+<script type="text/javascript" src="/js/reward.js"></script>
+
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/post/2021-10-09-first/" data-toggle="tooltip" data-placement="top" title="第一篇博客">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+                
+<div id="disqus-comment"></div>
+
+
+            </div>
+
+            
+            
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+            
+
+            
+            <div class="
+                col-lg-11 col-lg-offset-1
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+                <section>
+                    <hr>
+                    <h5>FRIENDS</h5>
+                    <ul class="list-inline">
+                        
+                        <li><a target="_blank" href="https://zhaohuabing.com">赵化冰的博客</a></li>
+                        
+                    </ul>
+                </section>
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                   
+                    
+                    <li>
+                        <a href="mailto:pjllcm@gmail.com">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+
+                    
+                    
+                    
+
+                    
+
+		    
+                    
+                    <li>
+                        <a target="_blank" href="/img/pengjls_header.jpg">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-weixin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/pengjl420">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+                </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Pengjls Blog 2021
+                    <br>
+                    <a href="https://github.com/pengjl420/PengjlsBlog">PengjlsBlog</a> by <a href="https://pengjl.com">pengjl</a> |
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="100px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=pengjl420&repo=PengjlsBlog&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function loadAsync(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        loadAsync("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    loadAsync("https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+    function generateCatalog(selector) {
+
+        
+        
+        
+        
+            _containerSelector = 'div.post-container'
+        
+
+        
+        var P = $(_containerSelector), a, n, t, l, i, c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        
+        $(selector).html('')
+
+        
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#" + $(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+            l = $('<li class="' + n + '_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    
+    $(".catalog-toggle").click((function (e) {
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    
+
+
+    loadAsync("\/js\/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+</body>
+</html>
