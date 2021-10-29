@@ -98,6 +98,10 @@
                     
                         
                         <li>
+                            <a href="/categories/go-zero">go-zero</a>
+                        </li>
+                        
+                        <li>
                             <a href="/categories/tech">tech</a>
                         </li>
                         
@@ -436,9 +440,9 @@
 <h2 id="创建和删除v1alpha3路由规则">创建和删除v1alpha3路由规则</h2>
 <p>由于一个特定目的地的所有路由规则现在都存储在单个<code>VirtualService</code>资源的一个有序列表中，因此为该目的地添加新的规则不需要再创建新的<code>RouteRule</code>，而是通过更新该目的地的<code>VirtualService</code>资源来实现。</p>
 <p>旧的路由规则：</p>
-<pre tabindex="0"><code class="language-command" data-lang="command">$ istioctl create -f my-second-rule-for-destination-abc.yaml
+<pre><code class="language-command" data-lang="command">$ istioctl create -f my-second-rule-for-destination-abc.yaml
 </code></pre><p><code>v1alpha3</code>路由规则：</p>
-<pre tabindex="0"><code class="language-command" data-lang="command">$ istioctl replace -f my-updated-rules-for-destination-abc.yaml
+<pre><code class="language-command" data-lang="command">$ istioctl replace -f my-updated-rules-for-destination-abc.yaml
 </code></pre><p>删除路由规则也使用istioctl replace完成，当然删除最后一个路由规则除外（删除最后一个路由规则需要删除<code>VirtualService</code>）。</p>
 <p>在添加或删除引用服务版本的路由时，需要在该服务相应的<code>DestinationRule</code>更新subsets 。 正如你可能猜到的，这也是使用<code>istioctl replace</code>完成的。</p>
 <h2 id="总结">总结</h2>
@@ -526,6 +530,12 @@
                     <hr class="hidden-sm hidden-xs">
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
                         
                         
                         

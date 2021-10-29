@@ -6,7 +6,16 @@
     <description>Recent content on Pengjls Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Tue, 19 Oct 2021 22:35:32 +0800</lastBuildDate><atom:link href="https://pengjl.com/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Oct 2021 10:38:45 +0800</lastBuildDate><atom:link href="https://pengjl.com/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>go-zero框架热编译</title>
+      <link>https://pengjl.com/post/go-zero-hot-compile/</link>
+      <pubDate>Fri, 29 Oct 2021 10:38:45 +0800</pubDate>
+      
+      <guid>https://pengjl.com/post/go-zero-hot-compile/</guid>
+      <description>前言 这段时间开始把现有业务逐步往微服务架构迁移，框架这块选的go-zero，出自于晓黑板，框架本身是不支持热编译的，导致在开发过程中改动代码</description>
+    </item>
+    
     <item>
       <title>Golang代码安全指南</title>
       <link>https://pengjl.com/post/golang-2021-10-19/</link>

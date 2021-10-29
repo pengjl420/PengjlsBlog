@@ -15,9 +15,9 @@
     
 
     
-    <meta name="title" content="Tech" />
-    <meta property="og:title" content="Tech" />
-    <meta property="twitter:title" content="Tech" />
+    <meta name="title" content="go-zero框架热编译" />
+    <meta property="og:title" content="go-zero框架热编译" />
+    <meta property="twitter:title" content="go-zero框架热编译" />
     
 
     
@@ -34,9 +34,9 @@
     <meta name="keyword"  content="">
     <link rel="shortcut icon" href="/img/favicon.ico">
 
-    <title>Tech-彭建龙的博客 | Pengjls Blog</title>
+    <title>go-zero框架热编译-彭建龙的博客 | Pengjls Blog</title>
 
-    <link rel="canonical" href="/categories/tech/">
+    <link rel="canonical" href="/post/go-zero-hot-compile/">
 
     <link rel="stylesheet" href="/css/iDisqus.min.css"/>
 
@@ -156,14 +156,49 @@
 
 
 
-<header class="intro-header" style="background-image: url('/img/home-bg-jeep.jpg')">
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/home-bg-jeep.jpg')
+    }
+</style>
+
+<header class="intro-header" >
+
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
-                <div class="site-heading">
-                    <h1>Pengjls Blog </h1>
-                    
-		    <span class="subheading">路在脚下，心向远方，鸿程久梦</span>
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/golang" title="golang">
+                            golang
+                        </a>
+                        
+                        <a class="tag" href="/tags/rizla" title="rizla">
+                            rizla
+                        </a>
+                        
+                        <a class="tag" href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1" title="微服务">
+                            微服务
+                        </a>
+                        
+                    </div>
+                    <h1>go-zero框架热编译</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        
+                            Posted by 
+                            
+                                     &#34;pengjl&#34;
+                             
+                            on 
+                            Friday, October 29, 2021
+                            
+                            
+                            
+                            
+                    </span>
                 </div>
             </div>
         </div>
@@ -172,155 +207,158 @@
 
 
 
-  
-<div class="container">
-    <div class="row">
-        
-        
-   	    <div class="
-            col-lg-8 col-lg-offset-1
-            col-md-8 col-md-offset-1
-            col-sm-12
-            col-xs-12
-            post-container
-        ">
+
+<article>
+    <div class="container">
+        <div class="row">
+
             
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
 
-<div class="post-preview">
-    <a href="https://pengjl.com/post/golang-2021-10-19/">
-        <h2 class="post-title">
-            Golang代码安全指南
-        </h2>
-	
-        <div class="post-content-preview">
-	
-            通用类 1. 代码实现类 1.1 内存管理 1.1.1【必须】切片长度校验 在对slice进行操作时，必须判断长度是否合法，防止程序panic // bad: 未判断dat
-       
-        </div>
-    </a>
-    <p class="post-meta">
-    
-        Posted by     &#34;pengjl&#34;  Tuesday, October 19, 2021
-        
-        
-    
-    </p>
+                
+                <h4 id="前言">前言</h4>
+<p>这段时间开始把现有业务逐步往微服务架构迁移，框架这块选的go-zero，出自于晓黑板，框架本身是不支持热编译的，导致在开发过程中改动代码后需要停止，然后重新运行，大大降低开发效率。</p>
+<p>刚开始学golang的时候，选的beego作为入门框架，现有业务也是用beego写的，自带的bee工具支持热编译，在切换到go-zero的时候就很不习惯了，开始琢磨要让go-zero也自动编译。</p>
+<p>我们在刚接触golang的时候，要启动一个go程序，通常就是命令：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">go run xxx.go
+</code></pre></div><p>beego在启动项目时，使用 <code>bee run</code>,它去找main包，main方法，并编译一个可执行文件，默认是执行目录文件名，在当前目录下任意文件被修改保存后，都将重新编译，达到自动编译的目的。</p>
+<p>go-zero通过goctl工具生成的api代码，同样存在main包，main方法，是否可以尝试试一下，反正也不花钱。</p>
+<h4 id="方法一">方法一</h4>
+<p>如下图所示，在go-zero的服务目录中执行<code>bee run</code> 命令，正常启动，并且生成一个与根目录同名的可执行文件，结合postman调试流程如下图所示：</p>
+<p>
+  <img src="/img/blog/2021-10-29-02.png" alt="avatar">
 
+</p>
+<p>结果是正常的，没什么问题，</p>
+<h4 id="方法二">方法二</h4>
+<p>在网上也看到其他的工具能够实现。例如 <code>rizla</code> 源于另一个go web框架 <code>Iris</code> 使用方法如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#6272a4">#安装 rizla 工具</span>
+go get -u github.com/kataras/rizla
+
+<span style="color:#6272a4"># 启动项目</span>
+rizla main.go
+</code></pre></div><h4 id="总结">总结</h4>
+<ul>
+<li>go-zero框架开发过程中实现热编译，最少有两种方法：
+<ul>
+<li>beego 框架的bee 工具。
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#6272a4">#安装</span>
+go get -u github.com/beego/bee/v2
+<span style="color:#6272a4">#运行</span>
+bee run
+</code></pre></div></li>
+<li>Iris 框架的 rizla 工具，使用法方法不再重复描述了。</li>
+</ul>
+</li>
+</ul>
+<p>由于目前只接触过 <code>beego</code> 和 <code>go-zero</code> 这两个框架，一个支持热编译，一个不支持热编译，可以推断其他不支持热编译的框架都能够通过支持热编译的工具来启动。</p>
+
+
+                
+                
+<div class="entry-shang text-center">
+    
+	    <p>「真诚赞赏，手留余香」</p>
+	
+	<button class="zs show-zs btn btn-bred">赞赏支持</button>
 </div>
-<hr>
-
-
-            
-
-
-
-       	</div>
+<div class="zs-modal-bg"></div>
+<div class="zs-modal-box">
+	<div class="zs-modal-head">
+		<button type="button" class="close">×</button>
+		<span class="author"><a href="https://pengjl.com">Pengjls Blog</a></span>
         
-
-<div class="
-    col-lg-3 col-lg-offset-0
-    col-md-3 col-md-offset-0
-    col-sm-12
-    col-xs-12
-    sidebar-container
-">
-    
-    
-    <section>
-        <hr class="hidden-sm hidden-xs">
-        <h5>FEATURED TAGS</h5>
-        <div class="tags">
-            
-            
-               
-            
-               
-            
-               
-            
-               
-            
-               
-            
-        </div>
-    </section>
-    
-
-    
-	
-    <section class="visible-md visible-lg">
-	<hr><h5><a href="/top/about">ABOUT ME</a></h5>
-        <div class="short-about">
-            
-            <a href="/top/about">
-               <img src="/img/pengjls_header.jpg" alt="avatar" style="cursor: pointer" />
-            </a>
-            
-            
-                <p>Software Developer, Open Source Enthusiast and Life Adventurer</p>
-            
-           
-           <ul class="list-inline">
-               
-               
-               
-               
-               
-               
-               <li>
-                   <a target="_blank" href="/img/pengjls_header.jpg">
-                       <span class="fa-stack fa-lg">
-                           <i class="fas fa-circle fa-stack-2x"></i>
-                           <i class="fab fa-weixin fa-stack-1x fa-inverse"></i>
-                       </span>
-                   </a>
-               </li>
-               
-               
-               <li>
-                   <a target="_blank" href="https://github.com/pengjl420">
-                       <span class="fa-stack fa-lg">
-                           <i class="fas fa-circle fa-stack-2x"></i>
-                           <i class="fab fa-github fa-stack-1x fa-inverse"></i>
-                       </span>
-                   </a>
-               </li>
-               
-               
-               
-               
-               
-               
-            
-            
-               
-               
-               
-               
-                </ul>
-            </div>
-    </section>
-	
-    
-    
-    <section>
-        <hr class="hidden-sm hidden-xs">
-        <h5>FRIENDS</h5>
-        <ul class="list-inline">
-            
-            <li><a target="_blank" href="https://zhaohuabing.com">赵化冰的博客</a></li>
-            
-        </ul>
-    </section>
-    
-
-    
-    
-</div>
-
+	        <p class="tip"><i></i><span>微信扫码,真诚赞赏，手留余香</span></p>
+		
 	</div>
+	
+	<img src="/img/reward/wechat.png"/>
+	
 </div>
+<script type="text/javascript" src="/js/reward.js"></script>
 
+                
+
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/post/golang-2021-10-19/" data-toggle="tooltip" data-placement="top" title="Golang代码安全指南">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+                
+<div id="disqus-comment"></div>
+
+
+            </div>
+
+            
+            
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+            
+
+            
+            <div class="
+                col-lg-11 col-lg-offset-1
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+                <section>
+                    <hr>
+                    <h5>FRIENDS</h5>
+                    <ul class="list-inline">
+                        
+                        <li><a target="_blank" href="https://zhaohuabing.com">赵化冰的博客</a></li>
+                        
+                    </ul>
+                </section>
+                
+            </div>
+        </div>
+    </div>
+</article>
 
 
 
