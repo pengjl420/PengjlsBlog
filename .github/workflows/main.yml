@@ -17,6 +17,6 @@ jobs:
         key: ${{ secrets.KEY }}
         script_stop: true
         script: |
-          cd apps/unknwon.cn
+          cd /home/pengjl/PengjlsBlog
           git pull
           hugo --destination=./public
