@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  hugo:
+    name: Hugo
+    runs-on: ubuntu-latest
+    steps:
+    - name: Compile content on the server
+      uses: appleboy/ssh-action@master
+      with:
+        host: 42.192.45.144
+        username: root
+        password: PENGjian123...
+        script_stop: true
+        script: |
+          cd apps/unknwon.cn
+          git pull
+          hugo --destination=./public
