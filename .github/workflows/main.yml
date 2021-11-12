@@ -18,5 +18,7 @@ jobs:
         script_stop: true
         script: |
           cd /home/pengjl/PengjlsBlog
+          git fetch --all
+          git reset --hard origin/main
           git pull
           hugo --destination=./public
