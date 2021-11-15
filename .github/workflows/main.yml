@@ -22,3 +22,4 @@ jobs:
           git reset --hard origin/main
           git pull
           hugo --destination=./public
+          
